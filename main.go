@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
@@ -26,6 +27,7 @@ func main() {
 		ShowDeleted(false).
 		SingleEvents(true).
 		OrderBy("startTime").
+		TimeMin(time.Now().Format(time.RFC3339)).
 		MaxResults(10).
 		Do()
 	if err != nil {
