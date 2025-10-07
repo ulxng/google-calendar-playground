@@ -23,6 +23,21 @@ func main() {
 	if err != nil {
 		log.Fatalf("newService: %v", err)
 	}
+
+	start := time.Now().Add(time.Hour * 24)
+	end := start.Add(time.Hour)
+	e := &calendar.Event{
+		Summary:     "Demo meeting",
+		Description: "added via service account",
+		Start:       &calendar.EventDateTime{DateTime: start.Format(time.RFC3339)},
+		End:         &calendar.EventDateTime{DateTime: end.Format(time.RFC3339)},
+	}
+	created, err := s.Events.Insert(calendarID, e).Do()
+	if err != nil {
+		log.Fatalf("insert: %v", err)
+	}
+	log.Println("created:", created.Id)
+
 	events, err := s.Events.List(calendarID).
 		ShowDeleted(false).
 		SingleEvents(true).
@@ -38,7 +53,6 @@ func main() {
 		fmt.Println("no events found")
 		return
 	}
-
 	for _, event := range events.Items {
 		fmt.Printf("event: %v from %s to %s\n", event.Summary, event.Start.DateTime, event.End.DateTime)
 	}
