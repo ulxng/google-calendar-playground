@@ -38,6 +38,19 @@ func main() {
 	}
 	log.Println("created:", created.Id)
 
+	evt, err := s.Events.Get(calendarID, created.Id).Do()
+	if err != nil {
+		log.Fatalf("get: %v", err)
+	}
+	fmt.Printf("event: %s\n", e.Summary)
+
+	evt.Description = fmt.Sprintf("updated time: %d", time.Now().Unix())
+	updated, err := s.Events.Update(calendarID, created.Id, evt).Do()
+	if err != nil {
+		log.Fatalf("update: %v", err)
+	}
+	fmt.Printf("updated: %s\n", updated.Description)
+
 	events, err := s.Events.List(calendarID).
 		ShowDeleted(false).
 		SingleEvents(true).
