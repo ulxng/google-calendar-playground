@@ -25,12 +25,14 @@ func main() {
 	}
 
 	start := time.Now().Add(time.Hour * 24)
-	end := start.Add(time.Hour)
+	end := start.Add(time.Minute * 30)
 	e := &calendar.Event{
-		Summary:     "Demo meeting",
-		Description: "added via service account",
-		Start:       &calendar.EventDateTime{DateTime: start.Format(time.RFC3339)},
-		End:         &calendar.EventDateTime{DateTime: end.Format(time.RFC3339)},
+		Summary:      "empty slot",
+		Description:  "added via service account",
+		Start:        &calendar.EventDateTime{DateTime: start.Format(time.RFC3339)},
+		End:          &calendar.EventDateTime{DateTime: end.Format(time.RFC3339)},
+		Transparency: "transparent",
+		Status:       "tentative",
 	}
 	created, err := s.Events.Insert(calendarID, e).Do()
 	if err != nil {
@@ -43,20 +45,24 @@ func main() {
 		log.Fatalf("get: %v", err)
 	}
 	fmt.Printf("event: %s\n", e.Summary)
-
-	evt.Description = fmt.Sprintf("updated time: %d", time.Now().Unix())
+	// simulate event confirmation
+	evt.Description = fmt.Sprintf("confirmation time: %d", time.Now().Unix())
+	evt.Transparency = "opaque"
+	evt.Status = "confirmed"
 	updated, err := s.Events.Update(calendarID, created.Id, evt).Do()
 	if err != nil {
 		log.Fatalf("update: %v", err)
 	}
 	fmt.Printf("updated: %s\n", updated.Description)
 
+	//find outdated empty slots
 	events, err := s.Events.List(calendarID).
+		Q("empty").
 		ShowDeleted(false).
 		SingleEvents(true).
 		OrderBy("startTime").
-		TimeMin(time.Now().Format(time.RFC3339)).
-		MaxResults(10).
+		TimeMax(time.Now().Format(time.RFC3339)).
+		MaxResults(100).
 		Do()
 	if err != nil {
 		log.Fatalf("list: %v", err)
@@ -68,5 +74,8 @@ func main() {
 	}
 	for _, event := range events.Items {
 		fmt.Printf("event: %v from %s to %s\n", event.Summary, event.Start.DateTime, event.End.DateTime)
+		if err := s.Events.Delete(calendarID, event.Id).Do(); err != nil {
+			log.Printf("delete: %v", err)
+		}
 	}
 }
