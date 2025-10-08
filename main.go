@@ -24,6 +24,21 @@ func main() {
 		log.Fatalf("newService: %v", err)
 	}
 
+	req := &calendar.FreeBusyRequest{
+		TimeMin: time.Now().Format(time.RFC3339),
+		TimeMax: time.Now().Add(time.Hour * 48).Format(time.RFC3339),
+		Items: []*calendar.FreeBusyRequestItem{
+			{Id: calendarID},
+		},
+	}
+	resp, err := s.Freebusy.Query(req).Do()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, busy := range resp.Calendars[calendarID].Busy {
+		log.Printf("Занято: %s — %s", busy.Start, busy.End)
+	}
+
 	start := time.Now().Add(time.Hour * 24)
 	end := start.Add(time.Minute * 30)
 	e := &calendar.Event{
